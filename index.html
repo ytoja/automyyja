@@ -1,0 +1,1060 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Automyyjän viestintä</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg1:#0a1520;--bg2:#12202e;--bg3:#1a2d3e;
+  --accent:#e63946;--accent2:#f4a261;--gold:#ffd166;
+  --glass:rgba(255,255,255,0.06);--border:rgba(255,255,255,0.12);
+  --text:#f0f4f8;--muted:#7a92a8;--ok:#2dd4bf;--err:#f87171;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  background:linear-gradient(135deg,var(--bg1) 0%,var(--bg2) 50%,var(--bg3) 100%);
+  min-height:100vh;font-family:'Nunito',sans-serif;color:var(--text);
+}
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(-55deg,transparent,transparent 60px,rgba(255,255,255,0.012) 60px,rgba(255,255,255,0.012) 61px);
+}
+
+/* HEADER */
+.header{
+  background:linear-gradient(90deg,rgba(230,57,70,.15),rgba(244,162,97,.08));
+  border-bottom:1px solid rgba(230,57,70,.3);
+  padding:16px 28px;display:flex;align-items:center;gap:16px;position:relative;z-index:1;
+}
+.hlogo{font-family:'Barlow Condensed',sans-serif;font-size:1rem;font-weight:700;
+  color:var(--accent);letter-spacing:3px;text-transform:uppercase}
+.htitle{font-family:'Barlow Condensed',sans-serif;font-size:1.6rem;font-weight:800;letter-spacing:2px}
+.hsub{font-size:.72rem;color:var(--muted);letter-spacing:1px;margin-top:1px}
+.hscore{margin-left:auto;text-align:right}
+.snum{font-family:'Barlow Condensed',sans-serif;font-size:1.9rem;font-weight:800;color:var(--gold);line-height:1}
+.slbl{font-size:.62rem;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
+.prog-wrap{height:3px;background:rgba(255,255,255,.06)}
+.prog-bar{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));transition:width .4s}
+
+/* LAYOUT */
+.main{display:flex;gap:20px;padding:24px 28px;position:relative;z-index:1;max-width:1100px;margin:0 auto}
+.sidebar{width:220px;flex-shrink:0}
+.task-area{flex:1;min-width:0}
+
+/* SIDEBAR */
+.mod-nav{display:flex;flex-direction:column;gap:6px}
+.mod-btn{
+  padding:8px 12px;border-radius:6px;font-size:.75rem;font-weight:600;cursor:pointer;
+  background:var(--glass);border:1px solid var(--border);color:var(--muted);
+  transition:all .15s;text-align:left;
+}
+.mod-btn:hover{background:rgba(255,255,255,.1);color:var(--text)}
+.mod-btn.active{background:rgba(230,57,70,.2);border-color:var(--accent);color:var(--text)}
+.mod-btn.done{background:rgba(45,212,191,.1);border-color:rgba(45,212,191,.3);color:var(--ok)}
+.mod-btn.wrong{background:rgba(248,113,113,.08);border-color:rgba(248,113,113,.25);color:var(--err)}
+
+/* RESUME BOX */
+.resume-box{
+  margin-top:14px;padding:10px 12px;
+  background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;
+}
+.resume-label{font-size:.68rem;color:var(--muted);margin-bottom:5px}
+.resume-code{
+  width:100%;font-size:.6rem;font-family:monospace;
+  background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.12);border-radius:4px;
+  padding:5px 7px;color:var(--muted);cursor:pointer;resize:none;height:48px;
+  transition:border-color .2s;
+}
+.resume-code:hover{border-color:var(--ok)}
+.resume-hint{font-size:.62rem;color:var(--muted);margin-top:3px}
+
+/* CARD */
+.card{
+  background:linear-gradient(135deg,rgba(255,255,255,.05),rgba(255,255,255,.02));
+  border:1px solid var(--border);border-radius:14px;padding:28px 32px;
+}
+.task-type{font-size:.7rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--accent2);margin-bottom:6px}
+.task-num{color:var(--muted);font-weight:400}
+.task-title{font-family:'Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:700;margin-bottom:6px}
+.task-instr{font-size:.85rem;color:var(--muted);margin-bottom:18px;line-height:1.5}
+
+/* CONTEXT BOX */
+.ctx{
+  background:rgba(0,0,0,.25);border:1px solid var(--border);border-radius:8px;
+  padding:14px 16px;margin-bottom:16px;font-size:.83rem;line-height:1.65;
+}
+.ctx-meta{font-size:.7rem;color:var(--muted);margin-bottom:8px;display:flex;flex-wrap:wrap;gap:12px}
+.ctx-lbl{color:var(--accent2);font-weight:700}
+
+/* WORD BUTTONS (korjaa) */
+.word-text{line-height:2.2}
+.word-btn{
+  background:none;border:none;font:inherit;color:var(--text);cursor:pointer;
+  padding:2px 4px;border-radius:4px;border-bottom:2px solid transparent;transition:all .15s;
+}
+.word-btn:hover{background:rgba(255,255,255,.08)}
+.word-btn.marked{background:rgba(248,113,113,.2);border-bottom-color:var(--err);color:var(--err)}
+.word-btn.correct-hit{background:rgba(45,212,191,.15);border-bottom-color:var(--ok);color:var(--ok)}
+.word-btn.missed{background:rgba(255,209,102,.15);border-bottom-color:var(--gold);color:var(--gold)}
+.word-btn.false-pos{background:rgba(248,113,113,.1);border-bottom-color:var(--err);color:var(--err);text-decoration:line-through}
+
+/* JÄRJESTÄ */
+.word-pool{display:flex;flex-wrap:wrap;gap:8px;min-height:42px;padding:10px;
+  background:rgba(0,0,0,.2);border:1px dashed rgba(255,255,255,.15);border-radius:8px;margin-bottom:10px}
+.answer-slots{display:flex;flex-wrap:wrap;gap:8px;min-height:48px;padding:10px;
+  background:rgba(45,212,191,.04);border:2px dashed rgba(45,212,191,.2);border-radius:8px;margin-bottom:10px}
+.chip{
+  padding:6px 12px;border-radius:20px;font-size:.82rem;font-weight:600;cursor:pointer;
+  background:rgba(255,255,255,.1);border:1px solid var(--border);color:var(--text);
+  transition:all .15s;user-select:none;
+}
+.chip:hover{background:rgba(255,255,255,.18);transform:translateY(-1px)}
+.chip.in-answer{background:rgba(45,212,191,.15);border-color:rgba(45,212,191,.4)}
+.chip.dragging{opacity:.4}
+.slot-hint{font-size:.75rem;color:var(--muted);align-self:center;padding:4px 8px}
+
+/* TÄYDENNÄ */
+.fill-text{font-size:.88rem;line-height:2.2}
+.blank-sel{
+  background:rgba(244,162,97,.1);border:1px solid rgba(244,162,97,.3);
+  border-radius:4px;padding:3px 8px;color:var(--text);font:inherit;font-size:.82rem;
+  cursor:pointer;transition:all .15s;
+}
+.blank-sel.ok{background:rgba(45,212,191,.15);border-color:var(--ok);color:var(--ok)}
+.blank-sel.fail{background:rgba(248,113,113,.12);border-color:var(--err);color:var(--err)}
+
+/* SANASTO */
+.match-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.match-item{
+  padding:10px 14px;border-radius:8px;font-size:.82rem;cursor:pointer;
+  background:var(--glass);border:1px solid var(--border);transition:all .15s;line-height:1.4;
+}
+.match-item:hover{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.25)}
+.match-item.selected{background:rgba(244,162,97,.15);border-color:var(--accent2)}
+.match-item.matched{background:rgba(45,212,191,.12);border-color:var(--ok);color:var(--ok);cursor:default}
+.match-item.shake{animation:shake .3s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+
+/* MUOTOILE */
+.rewrite-ta{
+  width:100%;min-height:110px;background:rgba(0,0,0,.3);
+  border:1px solid var(--border);border-radius:8px;padding:12px;
+  color:var(--text);font:inherit;font-size:.85rem;resize:vertical;
+  transition:border-color .2s;
+}
+.rewrite-ta:focus{outline:none;border-color:var(--accent2)}
+.checklist{display:flex;flex-direction:column;gap:6px;margin:12px 0}
+.check-item{display:flex;align-items:center;gap:8px;font-size:.8rem;color:var(--muted);padding:6px 10px;border-radius:6px;background:var(--glass)}
+.check-dot{width:20px;height:20px;border-radius:50%;border:2px solid var(--muted);display:flex;align-items:center;justify-content:center;font-size:.7rem;flex-shrink:0;transition:all .2s}
+.check-item.ok .check-dot{background:var(--ok);border-color:var(--ok);color:#000}
+.check-item.ok{color:var(--ok)}
+.check-item.fail .check-dot{background:var(--err);border-color:var(--err);color:#fff}
+.check-item.fail{color:var(--err)}
+
+/* OV */
+.statement{
+  font-size:.95rem;line-height:1.6;padding:16px 20px;
+  background:rgba(0,0,0,.25);border:1px solid var(--border);border-radius:8px;
+  margin-bottom:18px;font-style:italic;
+}
+.ov-btns{display:flex;gap:12px;margin-bottom:16px}
+.ov-btn{
+  flex:1;padding:14px;border-radius:10px;font-family:'Barlow Condensed',sans-serif;
+  font-size:1.1rem;font-weight:700;letter-spacing:1px;cursor:pointer;
+  border:2px solid;transition:all .15s;
+}
+.ov-btn.oikein{background:rgba(45,212,191,.1);border-color:rgba(45,212,191,.4);color:var(--ok)}
+.ov-btn.oikein:hover{background:rgba(45,212,191,.22)}
+.ov-btn.vaarin{background:rgba(248,113,113,.1);border-color:rgba(248,113,113,.4);color:var(--err)}
+.ov-btn.vaarin:hover{background:rgba(248,113,113,.22)}
+.ov-btn:disabled{opacity:.6;cursor:default}
+.ov-btn.hit{box-shadow:0 0 0 3px currentColor}
+
+/* FEEDBACK */
+.feedback{
+  padding:14px 16px;border-radius:8px;margin-top:14px;font-size:.83rem;line-height:1.6;
+  display:none;
+}
+.feedback.show{display:block}
+.feedback.ok{background:rgba(45,212,191,.1);border:1px solid rgba(45,212,191,.3)}
+.feedback.fail{background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.25)}
+.feedback-title{font-weight:700;margin-bottom:4px}
+.correct-ans{margin-top:8px;padding:8px 10px;background:rgba(0,0,0,.2);border-radius:6px;font-size:.8rem}
+
+/* BUTTONS */
+.btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+.btn{
+  padding:10px 20px;border-radius:8px;font-family:'Nunito',sans-serif;font-weight:700;
+  font-size:.82rem;cursor:pointer;border:none;transition:all .15s;letter-spacing:.3px;
+}
+.btn-primary{background:linear-gradient(135deg,var(--accent),#c1121f);color:#fff}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(230,57,70,.4)}
+.btn-secondary{background:var(--glass);border:1px solid var(--border);color:var(--text)}
+.btn-secondary:hover{background:rgba(255,255,255,.12)}
+.btn-next{background:linear-gradient(135deg,var(--ok),#0d9488);color:#000}
+
+/* INTRO */
+.intro-badge{display:inline-block;padding:4px 12px;border-radius:20px;font-size:.7rem;font-weight:700;
+  letter-spacing:2px;text-transform:uppercase;background:rgba(230,57,70,.15);border:1px solid rgba(230,57,70,.3);
+  color:var(--accent);margin-bottom:16px}
+.intro-title{font-family:'Barlow Condensed',sans-serif;font-size:2.4rem;font-weight:800;line-height:1.1;margin-bottom:12px}
+.intro-title span{color:var(--accent2)}
+.intro-desc{font-size:.85rem;color:var(--muted);line-height:1.6;margin-bottom:20px}
+.intro-mods{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:24px}
+.intro-mod{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;
+  background:var(--glass);border:1px solid var(--border);font-size:.78rem}
+.intro-mod-icon{font-size:1.2rem}
+.intro-mod-name{font-weight:700;font-size:.78rem}
+.intro-mod-desc{font-size:.68rem;color:var(--muted)}
+.name-input{
+  width:100%;padding:12px 14px;background:rgba(0,0,0,.3);
+  border:1px solid var(--border);border-radius:8px;color:var(--text);
+  font-family:'Nunito',sans-serif;font-size:.9rem;margin-bottom:10px;transition:border-color .2s;
+}
+.name-input:focus{outline:none;border-color:var(--accent2)}
+.resume-section{margin-top:20px;padding-top:20px;border-top:1px solid var(--border)}
+.resume-section-lbl{font-size:.75rem;color:var(--muted);margin-bottom:8px}
+.resume-ta{
+  width:100%;height:60px;background:rgba(0,0,0,.3);border:1px solid var(--border);
+  border-radius:8px;padding:8px 12px;color:var(--text);font-family:monospace;font-size:.68rem;
+  resize:none;margin-bottom:8px;transition:border-color .2s;
+}
+.resume-ta:focus{outline:none;border-color:var(--ok)}
+
+/* RESULTS */
+.results-icon{font-size:3rem;margin-bottom:10px;text-align:center}
+.results-title{font-family:'Barlow Condensed',sans-serif;font-size:2rem;font-weight:800;text-align:center;margin-bottom:4px}
+.results-score{font-family:'Barlow Condensed',sans-serif;font-size:3.5rem;font-weight:800;color:var(--gold);text-align:center;line-height:1}
+.results-sub{text-align:center;color:var(--muted);font-size:.85rem;margin-bottom:20px}
+.results-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px}
+.rg-item{text-align:center;padding:12px;background:var(--glass);border:1px solid var(--border);border-radius:8px}
+.rg-num{font-family:'Barlow Condensed',sans-serif;font-size:1.8rem;font-weight:800;color:var(--accent2)}
+.rg-lbl{font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+.breakdown{margin-bottom:20px}
+.breakdown-row{display:flex;justify-content:space-between;align-items:center;
+  padding:7px 0;border-bottom:1px solid rgba(255,255,255,.06);font-size:.82rem}
+.breakdown-row:last-child{border:none}
+.bd-type{color:var(--muted)}
+.bd-score{font-weight:700;color:var(--text)}
+.report-box{
+  width:100%;height:140px;background:rgba(0,0,0,.3);border:1px solid var(--border);
+  border-radius:8px;padding:10px 12px;color:var(--text);font-family:monospace;
+  font-size:.68rem;resize:none;margin-top:10px;
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="hlogo">Autoliike</div>
+    <div class="htitle">Automyyjän viestintä</div>
+    <div class="hsub">Kielenhuolto &amp; kirjoitustaito</div>
+  </div>
+  <div class="hscore">
+    <div class="snum" id="score-disp">0</div>
+    <div class="slbl">pistettä</div>
+  </div>
+</div>
+<div class="prog-wrap"><div class="prog-bar" id="prog-bar" style="width:0%"></div></div>
+
+<div class="main">
+  <div class="sidebar">
+    <div class="mod-nav" id="mod-nav"></div>
+    <div class="resume-box" id="resume-box" style="display:none">
+      <div class="resume-label">📋 Jatkakoodi — klikkaa kopioidaksesi</div>
+      <textarea class="resume-code" id="resume-code" readonly
+        onclick="this.select();document.execCommand('copy');this.style.borderColor='var(--ok)';setTimeout(()=>this.style.borderColor='',1200)"
+        title="Klikkaa kopioidaksesi"></textarea>
+      <div class="resume-hint">Tallenna koodi — voit jatkaa myöhemmin</div>
+    </div>
+  </div>
+  <div class="task-area" id="task-area"></div>
+</div>
+
+<script>
+'use strict';
+const PA_URL = 'https://default8fce65e3c62d4510b526ea15adf6e1.84.environment.api.powerplatform.com:443/powerautomate/automations/direct/workflows/2c49c9ed4b284c2f927a15eebb0d806e/triggers/manual/paths/invoke?api-version=1';
+
+// ── TEHTÄVÄDATA ──────────────────────────────────────────────────────────────
+
+const TASKS = [
+
+// ═══ T1: KORJAA KIRJOITUSVIRHEET (4 kpl) ═══
+{
+  type:'korjaa', points:8,
+  label:'Korjaa virheet',
+  title:'Koeajovahvistus',
+  instr:'Klikkaa kaikki virheelliset sanat. Tekstissä on 4 virhettä.',
+  ctx:{from:'Asiakaspalvelu',to:'Matti Virtanen',subj:'Koeajovahvistus — Toyota Corolla',
+    body:'Hyvä Matti virtanen, Kiitos yhteydenotostanne. Vahvistamme koeajon ajalle tiistai 14. tammikuuta kello 14:00. Meiltä löytyy teille sopiva auto ja tarjomme teille myös rahoitusvaihtoehtoja. Ystävällisesti, Autoliike Nopea'},
+  errors:['virtanen','kiitos','tarjomme'],
+  errorInfo:{
+    'virtanen':'Sukunimi kirjoitetaan isolla: "Virtanen"',
+    'kiitos':'Pilkun jälkeen pienellä: "kiitos yhteydenotostanne"',
+    'tarjomme':'"tarjomme" on virheellinen — oikein: "tarjoamme"',
+  }
+},
+{
+  type:'korjaa', points:8,
+  label:'Korjaa virheet',
+  title:'Tekstiviesti asiakkaalle',
+  instr:'Klikkaa kaikki virheelliset sanat. Tekstissä on 3 virhettä — joukossa kielioppivirhe.',
+  ctx:{from:'Myyjä Sari',to:'Asiakas',subj:'WhatsApp-viesti',
+    body:'Hei Tiina Lönnberg. Otin lisätietoja Audin rahoituksesta teidän puolesta. Kuukausierä on noin 289 euroa ja leasing-sopimuksen pituus on kolme vuota. Laittakaa viestiä jos haluatte sopia tapamisen.'},
+  errors:['puolesta','vuota','tapamisen'],
+  errorInfo:{
+    'puolesta':'Possessiivisuffiksi puuttuu — oikein: "teidän puolestanne"',
+    'vuota':'"vuota" ei ole sana — oikein: "vuotta"',
+    'tapamisen':'Väärä muoto — oikein: "tapaamisen"',
+  }
+},
+{
+  type:'korjaa', points:10,
+  label:'Korjaa virheet',
+  title:'Tarjouskirje',
+  instr:'Klikkaa kaikki virheelliset sanat. Tekstissä on 4 virhettä.',
+  ctx:{from:'Automyyjä Juha',to:'Asiakas',subj:'Tarjous — Volkswagen Passat 2022',
+    body:'Arvoisa asiakas, haluamme esitellä teille mainiota volkswagen passat -autoa vuosimallia 2022. Ajoneuvon hinta on 24 900 euroa. Vaihtoautonne voidaan ottaa vastaan vaihdossa. auto on huollettu säänöllisesti ja sillä on täysi huoltokirja.'},
+  errors:['volkswagen','passat','säänöllisesti','auto'],
+  errorInfo:{
+    'volkswagen':'Automerkin nimi isolla: "Volkswagen"',
+    'passat':'Automallin nimi isolla: "Passat"',
+    'säänöllisesti':'Kirjoitusvirhe — oikein: "säännöllisesti"',
+    'auto':'Lauseen alku isolla: "Auto on huollettu..."',
+  }
+},
+{
+  type:'korjaa', points:8,
+  label:'Korjaa virheet',
+  title:'Vaihtoauton arviointi',
+  instr:'Klikkaa kaikki virheelliset sanat. Tekstissä on 3 virhettä.',
+  ctx:{from:'Myyntiassistentti',to:'Heikki Mäkinen',subj:'Vaihtoautonne arviointi',
+    body:'Hyvä Heikki Mäkinen, Vaihtoautonne arviointi on nyt valmistu. Ajoneuvon arvoksi olemme arvioineet 8 500 euroa. Tämä summa voidaan käyttää uuden auton ostossa hinnanalennuksena. Pyydämme teitä ottamaan yhteyttä mahdollisimman piaan.'},
+  errors:['valmistu','piaan'],
+  errorInfo:{
+    'valmistu':'Aikamuoto väärin — oikein: "valmistunut"',
+    'piaan':'Kirjoitusvirhe — oikein: "pian"',
+  }
+},
+
+// ═══ T2: VALITSE OIKEA MUOTO (4 kpl) ═══
+{
+  type:'valitse', points:8,
+  label:'Valitse muoto',
+  title:'Oikea sijamuoto',
+  instr:'Valitse jokaiseen kohtaan oikea sanamuoto.',
+  template:'Hyvä [A] Korhonen, kiitos [B] yhteydenotostanne. [C] autonne vaihtoarvo on noin 12 000 euroa.',
+  blanks:[
+    {id:'A',opts:['Herra','Hei','Rakkain','Se'],correct:'Herra',exp:'"Herra" on muodollinen puhuttelu liike-elämässä.'},
+    {id:'B',opts:['nopeasta','asiattomasta','asiallisesta','pitkästä'],correct:'asiallisesta',exp:'"Asiallisesta yhteydenotosta" on vakioilmaus.'},
+    {id:'C',opts:['Katsottuna','Arvioidessa','Katsoen','Arviomme mukaan'],correct:'Arviomme mukaan',exp:'"Arviomme mukaan" on selkeä ammatillinen ilmaisu.'},
+  ]
+},
+{
+  type:'valitse', points:8,
+  label:'Valitse muoto',
+  title:'Kauppasopimuksen kieli',
+  instr:'Valitse oikeat sanat kauppasopimukseen.',
+  template:'Tähän [A] sisältyy auton rekisteröinti, ensimmäinen vuosi [B] sekä [C] kolmeksi vuodeksi.',
+  blanks:[
+    {id:'A',opts:['paperiin','kauppasopimukseen','listaan','kuittiin'],correct:'kauppasopimukseen',exp:'"Kauppasopimus" on virallinen termi.'},
+    {id:'B',opts:['vakuutusta','lisenssejä','huoltoa','kauppaa'],correct:'huoltoa',exp:'Ensimmäinen "huolto" sisältyy usein kauppahintaan.'},
+    {id:'C',opts:['takuuta','lainaa','varastoa','hintalappua'],correct:'takuuta',exp:'"Takuu" = valmistajan virhevastuu.'},
+  ]
+},
+{
+  type:'valitse', points:8,
+  label:'Valitse muoto',
+  title:'Sähköpostin aloitus',
+  instr:'Täydennä ammattimainen sähköpostiviesti.',
+  template:'[A] asiakas, vastauksena [B] kysymykseenne rahoitusvaihtoehdoista totean, että tarjoamme sekä [C] että perinteistä osamaksua.',
+  blanks:[
+    {id:'A',opts:['Hyvä','Moi','Terve','Oi'],correct:'Hyvä',exp:'"Hyvä [asiakas]" on vakiintunut muodollinen aloitus.'},
+    {id:'B',opts:['teidän','sinun','heidän','meidän'],correct:'teidän',exp:'Muodollisessa viestinnässä käytetään teitittelyä.'},
+    {id:'C',opts:['leasing-sopimusta','lainaa pankista','lahjaa','alennusta'],correct:'leasing-sopimusta',exp:'"Leasing" on auton pitkäaikainen vuokrasopimus.'},
+  ]
+},
+{
+  type:'valitse', points:8,
+  label:'Valitse muoto',
+  title:'Luovutusviesti',
+  instr:'Täydennä auton luovutusviesti.',
+  template:'Hyvä Niina Laine, teille tänään luovutettu [A] on rekisteröity teidän nimiinne. [B] alkaa tänään ja on voimassa kolme vuotta. Muistakaa [C] ajanvaraus 15 000 kilometrin kohdalla.',
+  blanks:[
+    {id:'A',opts:['pyörä','ajoneuvo','tavara','asia'],correct:'ajoneuvo',exp:'"Ajoneuvo" on virallinen termi autolle.'},
+    {id:'B',opts:['Takuu','Laina','Sakko','Vakuutus'],correct:'Takuu',exp:'"Takuu" alkaa luovutuspäivästä.'},
+    {id:'C',opts:['huolto','korjaus','osto','myynti'],correct:'huolto',exp:'Määräaikaishuolto tehdään kilometrimäärän mukaan.'},
+  ]
+},
+
+// ═══ T3: JÄRJESTÄ LAUSE (4 kpl) ═══
+{
+  type:'jarjesta', points:10,
+  label:'Järjestä lause',
+  title:'Kiitosviesti koeajosta',
+  instr:'Järjestä sanat oikeaan järjestykseen. Klikkaa sanoja järjestyksessä tai raahaa.',
+  words:['koeajosta','Kiitos','mielenkiintostanne','osoittamastanne','ja'],
+  correct:'Kiitos koeajosta ja osoittamastanne mielenkiintostanne',
+  hint:'Aloita kohteliaisuudella.'
+},
+{
+  type:'jarjesta', points:10,
+  label:'Järjestä lause',
+  title:'Rahoitustietojen tarjous',
+  instr:'Järjestä sanat asialliseksi virkkeeksi.',
+  words:['lisätietoja','Annan','mielelläni','rahoitusvaihtoehdoista','teille'],
+  correct:'Annan teille mielelläni lisätietoja rahoitusvaihtoehdoista',
+  hint:'Verbi tulee yleensä toiseksi.'
+},
+{
+  type:'jarjesta', points:10,
+  label:'Järjestä lause',
+  title:'Malliston esittely',
+  instr:'Muodosta muodollinen virke.',
+  words:['odotamme','tutustumistanne','Innolla','mallistoomme','uuteen'],
+  correct:'Innolla odotamme tutustumistanne uuteen mallistoomme',
+  hint:'Tunnelatauksellinen sana voi aloittaa virkkeen.'
+},
+{
+  type:'jarjesta', points:10,
+  label:'Järjestä lause',
+  title:'Palveluasenne',
+  instr:'Muodosta asiakaspalveluvirke.',
+  words:['palvelemaan','iloisia','Olemme','teitä','aina'],
+  correct:'Olemme aina iloisia palvelemaan teitä',
+  hint:'Subjekti alkuun.'
+},
+
+// ═══ T4: AMMATTISANASTO (4 kpl) ═══
+{
+  type:'sanasto', points:12,
+  label:'Ammattisanasto',
+  title:'Autokaupan perustermit',
+  instr:'Yhdistä termi ja selitys. Klikkaa ensin termi, sitten selitys.',
+  pairs:[
+    {term:'Leasing',def:'Auton pitkäaikainen vuokraus kuukausimaksulla'},
+    {term:'Vaihtoauto',def:'Asiakkaan vanha auto, joka otetaan vastaan kaupassa'},
+    {term:'Koeajo',def:'Testiajelukerta ennen ostopäätöstä'},
+    {term:'Huoltokirja',def:'Asiakirja, johon on kirjattu auton kaikki huollot'},
+  ]
+},
+{
+  type:'sanasto', points:12,
+  label:'Ammattisanasto',
+  title:'Rahoitus ja sopimukset',
+  instr:'Yhdistä termi ja selitys.',
+  pairs:[
+    {term:'Osamaksu',def:'Kauppahinta maksetaan erissä sovitun ajan kuluessa'},
+    {term:'Rekisteröinti',def:'Ajoneuvon kirjaaminen viralliseen liikennekäyttöön'},
+    {term:'Takuuaika',def:'Aika, jonka valmistaja vastaa ajoneuvon virheistä'},
+    {term:'Kauppasopimus',def:'Virallinen asiakirja auton osto- ja myyntiehdoista'},
+  ]
+},
+{
+  type:'sanasto', points:12,
+  label:'Ammattisanasto',
+  title:'Myyntityön termit',
+  instr:'Yhdistä termi ja selitys.',
+  pairs:[
+    {term:'Demonstraatioauto',def:'Myyjän tai liikkeen käytössä ollut esittelyauto'},
+    {term:'Lisävaruste',def:'Auton perusvarustukseen kuulumaton lisäosa'},
+    {term:'Tarjous',def:'Kirjallinen hinta-arvio, jonka myyjä antaa asiakkaalle'},
+    {term:'Luovutus',def:'Hetki, jolloin auto annetaan virallisesti asiakkaan haltuun'},
+  ]
+},
+{
+  type:'sanasto', points:12,
+  label:'Ammattisanasto',
+  title:'Asiakaspalvelun termit',
+  instr:'Yhdistä termi ja selitys.',
+  pairs:[
+    {term:'Jälkimarkkinointi',def:'Asiakkaan kontaktointi kaupan jälkeen'},
+    {term:'Liikennekatsastus',def:'Pakollinen määräaikaistutkimus ajoneuvon kunnosta'},
+    {term:'Myyntihinta',def:'Lopullinen hinta, jonka asiakas maksaa autosta'},
+    {term:'Rahoitusvaihtoehto',def:'Eri tapoja maksaa auto, esim. osamaksu tai leasing'},
+  ]
+},
+
+// ═══ T5: MUOTOILE VIESTI (4 kpl) ═══
+{
+  type:'muotoile', points:15,
+  label:'Muotoile viesti',
+  title:'Koeajon sopiminen',
+  instr:'Muotoile epämuodollinen viesti ammattimaiseksi. Tarkista sävy, puhuttelu ja rakenne.',
+  informal:'Hei! joo koeajosta puhuttiin, se voitas sopia jotai ensi viikolle? Mul on vapaata tiistaina. laita viestiä',
+  checks:[
+    {id:'teitittely',label:'Teitittely (Te / Teille / Teidän)',re:/\bTe\b|\bTeillä\b|\bTeidän\b|\bteille\b|\bTeille\b/i},
+    {id:'aloitus',label:'Muodollinen aloitus (Hyvä...)',re:/^Hyvä/},
+    {id:'lopetus',label:'Kohtelias lopetus (Ystävällisesti / Terveisin)',re:/ystävällisesti|terveisin|kunnioittavasti/i},
+    {id:'piste',label:'Lauseet päättyvät pisteeseen',re:/\.\s/},
+  ],
+  model:'Hyvä asiakas, aiemmin sovimme koeajosta. Ehdottaisin ajankohdaksi ensi tiistaina. Pyydän Teitä ottamaan yhteyttä sopivan ajan vahvistamiseksi. Ystävällisesti, [Myyjän nimi]'
+},
+{
+  type:'muotoile', points:15,
+  label:'Muotoile viesti',
+  title:'Tarjousviesti',
+  instr:'Tee viestistä asiallinen ja ammattimainen.',
+  informal:'moi, sulla oli se passat kiinnostuksessa, se maksaa 23k ja vaihtoauto menee siitä pois. soita jos kiinnostaa',
+  checks:[
+    {id:'teitittely',label:'Teitittely',re:/\bTe\b|\bteille\b|\bTeille\b|\bTeidän\b/i},
+    {id:'aloitus',label:'Muodollinen aloitus',re:/^Hyvä/},
+    {id:'hinta',label:'Hinta kirjoitettu kokonaan (23 000)',re:/23[\s]?000/},
+    {id:'lopetus',label:'Asiallinen lopetus',re:/ystävällisesti|terveisin/i},
+  ],
+  model:'Hyvä asiakas, viitaten aiempaan keskusteluumme Volkswagen Passatista: auton hinta on 23 000 euroa, johon vaihtoautonne arvo lasketaan mukaan. Ottakaa rohkeasti yhteyttä lisätietoja varten. Ystävällisesti, [Myyjän nimi]'
+},
+{
+  type:'muotoile', points:15,
+  label:'Muotoile viesti',
+  title:'Koeajon seuranta',
+  instr:'Muotoile koeajon jälkeinen seurantaviesti ammattimaisesti — ilman painostusta.',
+  informal:'hei, miten se koeajo meni? otetaanko kaupat? meillä on muutaki kiinnostuneita joten kannattaa päättää nopeesti',
+  checks:[
+    {id:'teitittely',label:'Teitittely',re:/\bTe\b|\bteille\b|\bTeiltä\b/i},
+    {id:'aloitus',label:'Muodollinen aloitus',re:/^Hyvä/},
+    {id:'painostus',label:'Ei painostavaa kiirehtimistä',re:/^(?!.*nopeasti|.*nopeesti|.*kiire|.*heti).*/i},
+    {id:'lopetus',label:'Kohtelias lopetus',re:/ystävällisesti|terveisin/i},
+  ],
+  model:'Hyvä asiakas, toivottavasti koeajo oli mieleisenne. Olisin iloinen kuulemaan ajatuksianne. Olen käytettävissänne lisäkysymyksiä varten. Ystävällisesti, [Myyjän nimi]'
+},
+{
+  type:'muotoile', points:15,
+  label:'Muotoile viesti',
+  title:'Luovutusvahvistus',
+  instr:'Muokkaa rennosti kirjoitettu viesti viralliseksi vahvistussähköpostiksi.',
+  informal:'hei tää on vaan infoo et auto on rekistereissä ja se lunastetaan huomenna, tuu hakeen puol kahdentoista',
+  checks:[
+    {id:'teitittely',label:'Teitittely',re:/\bTe\b|\bteille\b|\bTeidän\b/i},
+    {id:'aloitus',label:'Muodollinen aloitus',re:/^Hyvä/},
+    {id:'aika',label:'Aika ilmaistu selkeästi (kello 11.30)',re:/kello|11[.:]30/i},
+    {id:'lopetus',label:'Kohtelias lopetus',re:/ystävällisesti|terveisin/i},
+  ],
+  model:'Hyvä asiakas, ilmoitamme, että ajoneuvonne on nyt rekisteröity. Luovutus tapahtuu huomenna kello 11.30. Tervetuloa autoliikkeeseen. Ystävällisesti, [Myyjän nimi]'
+},
+
+// ═══ T6: OIKEIN / VÄÄRIN (4 kpl) ═══
+{
+  type:'oikein', points:6,
+  label:'Oikein vai väärin?',
+  title:'Emojit viestinnässä',
+  statement:'Automyyjä voi käyttää asiakasviestinnässä emojeja 😊👍 ammattimaisen vaikutelman luomiseksi.',
+  correct:false,
+  exp:'Emojit eivät kuulu muodolliseen liike-elämän viestintään. Ne voivat heikentää ammattimaista vaikutelmaa etenkin uusille tai iäkkäille asiakkaille.'
+},
+{
+  type:'oikein', points:6,
+  label:'Oikein vai väärin?',
+  title:'Tuttavallinen aloitus',
+  statement:'Sähköpostin voi aloittaa "Hei [nimi]!" myös muodollisessa asiakasviestinnässä, kun asiakas on tuttu.',
+  correct:true,
+  exp:'Kyllä — vakiintuneessa asiakassuhteessa rennompi aloitus on hyväksyttävää. Seuraa asiakkaan omaa viestintätyyliä.'
+},
+{
+  type:'oikein', points:6,
+  label:'Oikein vai väärin?',
+  title:'Hinnan kirjoitusmuoto',
+  statement:'Auton hinta pitää aina kirjoittaa sähköpostissa pelkillä numeroilla (esim. "23900€"), ei sanoin.',
+  correct:false,
+  exp:'Virallisissa asiakirjoissa hinta voidaan kirjoittaa myös sanoin. Muista välilyönti tuhaterottimena: 23 900, ei 23900.'
+},
+{
+  type:'oikein', points:6,
+  label:'Oikein vai väärin?',
+  title:'Teitittely pakollinen?',
+  statement:'Teitittely on pakollista kaikessa suomalaisessa liike-elämän asiakasviestinnässä.',
+  correct:false,
+  exp:'Teitittely ei ole ehdoton sääntö, mutta se on turvallinen valinta uusien asiakkaiden kanssa. Automyyntialan arvokkaampi hintataso puoltaa teitittelyä.'
+},
+];
+
+// ── STATE ────────────────────────────────────────────────────────────────────
+let S = {
+  phase:'intro', name:'', score:0, maxScore:0, taskIdx:0, tasks:[],
+  drag:null
+};
+let markedWords = new Set();
+let matchSel = {term:null, def:null, matched:new Set()};
+
+function shuffle(a){return [...a].sort(()=>Math.random()-.5)}
+
+// ── PROGRESS CODE ────────────────────────────────────────────────────────────
+function makeCode(){
+  if(!S.tasks.length) return null;
+  try{
+    const snap={n:S.name,s:S.score,i:S.taskIdx,
+      t:S.tasks.map(t=>({d:t.done?1:0,c:t.correct?1:0,s:t.score,cs:t.correctStr||''}))};
+    return btoa(unescape(encodeURIComponent(JSON.stringify(snap))));
+  }catch(e){return null;}
+}
+function loadCode(code){
+  try{
+    const snap=JSON.parse(decodeURIComponent(escape(atob(code.trim()))));
+    if(!snap.n||!snap.t||snap.t.length!==TASKS.length) return false;
+    S.name=snap.n; S.score=snap.s; S.taskIdx=snap.i;
+    S.tasks=TASKS.map((t,i)=>({...t,done:!!snap.t[i].d,correct:!!snap.t[i].c,score:snap.t[i].s,correctStr:snap.t[i].cs}));
+    S.maxScore=TASKS.reduce((a,t)=>a+t.points,0);
+    S.phase='task';
+    return true;
+  }catch(e){return false;}
+}
+function refreshCode(){
+  const el=document.getElementById('resume-code');
+  const box=document.getElementById('resume-box');
+  if(!el||!box) return;
+  const code=makeCode();
+  if(code){el.value=code;box.style.display='block';}
+}
+
+// ── RENDER ───────────────────────────────────────────────────────────────────
+function render(){
+  document.getElementById('score-disp').textContent=S.score;
+  if(S.phase==='intro') renderIntro();
+  else if(S.phase==='task') renderTask();
+  else renderResults();
+}
+
+function renderIntro(){
+  document.getElementById('mod-nav').innerHTML='';
+  document.getElementById('resume-box').style.display='none';
+  document.getElementById('prog-bar').style.width='0%';
+  document.getElementById('task-area').innerHTML=`
+  <div class="card">
+    <div class="intro-badge">🎯 Oppimispeli</div>
+    <div class="intro-title">Automyyjän<br><span>viestintäharjoitus</span></div>
+    <div class="intro-desc">Harjoittele automyyjän ammattiin tarvittavia kielenhuoltotaitoja.
+      ${TASKS.length} tehtävää — kirjoitusvirheiden tunnistus, oikeat muodot, sanajärjestys, ammattisanasto ja viestin muotoilu.</div>
+    <div class="intro-mods">
+      <div class="intro-mod"><div class="intro-mod-icon">🔍</div><div><div class="intro-mod-name">Korjaa virheet</div><div class="intro-mod-desc">Löydä kirjoitusvirheet</div></div></div>
+      <div class="intro-mod"><div class="intro-mod-icon">✏️</div><div><div class="intro-mod-name">Valitse muoto</div><div class="intro-mod-desc">Oikea sanamuoto</div></div></div>
+      <div class="intro-mod"><div class="intro-mod-icon">🔀</div><div><div class="intro-mod-name">Järjestä lause</div><div class="intro-mod-desc">Oikea sanajärjestys</div></div></div>
+      <div class="intro-mod"><div class="intro-mod-icon">📚</div><div><div class="intro-mod-name">Ammattisanasto</div><div class="intro-mod-desc">Autoalan termit</div></div></div>
+      <div class="intro-mod"><div class="intro-mod-icon">✍️</div><div><div class="intro-mod-name">Muotoile viesti</div><div class="intro-mod-desc">Epämuodollisesta viralliseksi</div></div></div>
+      <div class="intro-mod"><div class="intro-mod-icon">⚖️</div><div><div class="intro-mod-name">Oikein vai väärin?</div><div class="intro-mod-desc">Viestintäperiaatteet</div></div></div>
+    </div>
+    <input class="name-input" id="name-inp" placeholder="Kirjoita nimesi" maxlength="50">
+    <button class="btn btn-primary" style="width:100%" onclick="startNew()">ALOITA HARJOITTELU →</button>
+    <div class="resume-section">
+      <div class="resume-section-lbl">↩️ Onko sinulla jatkakoodi? Liitä se tähän:</div>
+      <textarea class="resume-ta" id="resume-inp" placeholder="Liitä koodi tähän..."></textarea>
+      <button class="btn btn-secondary" style="width:100%" onclick="startResume()">JATKA KOODILLA →</button>
+    </div>
+  </div>`;
+}
+
+function startNew(){
+  const n=document.getElementById('name-inp').value.trim();
+  if(!n){document.getElementById('name-inp').style.borderColor='var(--err)';return;}
+  S={phase:'task',name:n,score:0,maxScore:TASKS.reduce((a,t)=>a+t.points,0),
+    taskIdx:0,tasks:TASKS.map(t=>({...t,done:false,correct:false,score:0})),drag:null};
+  render();
+}
+
+function startResume(){
+  const code=document.getElementById('resume-inp').value.trim();
+  if(!code){document.getElementById('resume-inp').style.borderColor='var(--err)';return;}
+  if(loadCode(code)){render();}
+  else{
+    const el=document.getElementById('resume-inp');
+    el.style.borderColor='var(--err)';
+    el.value='';el.placeholder='Virheellinen koodi — tarkista ja yritä uudelleen';
+  }
+}
+
+// ── NAV & PROGRESS ────────────────────────────────────────────────────────────
+function renderNav(){
+  document.getElementById('mod-nav').innerHTML=S.tasks.map((t,i)=>{
+    let cls='mod-btn';
+    if(i===S.taskIdx) cls+=' active';
+    else if(t.done) cls+=t.correct?' done':' wrong';
+    return `<div class="${cls}" onclick="jumpTo(${i})">${i+1}. ${t.label}</div>`;
+  }).join('');
+}
+function jumpTo(i){S.taskIdx=i;renderTask();}
+function updateProgress(){
+  document.getElementById('prog-bar').style.width=(S.taskIdx/S.tasks.length*100)+'%';
+  document.getElementById('score-disp').textContent=S.score;
+}
+
+// ── TASK SHELL ────────────────────────────────────────────────────────────────
+function renderTask(){
+  S.phase='task';
+  markedWords=new Set();
+  matchSel={term:null,def:null,matched:new Set()};
+  renderNav();updateProgress();
+  const t=S.tasks[S.taskIdx];
+  const area=document.getElementById('task-area');
+  if(t.type==='korjaa')   area.innerHTML=buildKorjaa(t);
+  if(t.type==='valitse')  area.innerHTML=buildValitse(t);
+  if(t.type==='jarjesta') {area.innerHTML=buildJarjesta(t);attachDrag();}
+  if(t.type==='sanasto')  area.innerHTML=buildSanasto(t);
+  if(t.type==='muotoile') area.innerHTML=buildMuotoile(t);
+  if(t.type==='oikein')   area.innerHTML=buildOV(t);
+  refreshCode();
+}
+
+function shell(t,body){
+  return `<div class="card"><div class="task-type">${t.label} <span class="task-num">${S.taskIdx+1}/${S.tasks.length}</span></div>
+  <div class="task-title">${t.title}</div>
+  <div class="task-instr">${t.instr}</div>${body}</div>`;
+}
+function ctxBox(c){
+  if(!c) return '';
+  return `<div class="ctx"><div class="ctx-meta">
+    <span><span class="ctx-lbl">Lähettäjä:</span> ${c.from}</span>
+    <span><span class="ctx-lbl">Vastaanottaja:</span> ${c.to}</span>
+    <span><span class="ctx-lbl">Aihe:</span> ${c.subj}</span>
+  </div>${c.body}</div>`;
+}
+function nextBtn(){
+  return S.taskIdx<S.tasks.length-1
+    ?'<button class="btn btn-next" onclick="nextTask()">SEURAAVA →</button>'
+    :'<button class="btn btn-next" onclick="goResults()">KATSO TULOKSET →</button>';
+}
+function nextTask(){S.taskIdx++;renderTask();}
+function goResults(){S.phase='results';render();}
+
+// ── T1: KORJAA ────────────────────────────────────────────────────────────────
+function buildKorjaa(t){
+  const words=t.ctx.body.split(/(\s+)/);
+  const btns=words.map(w=>{
+    if(/^\s+$/.test(w)) return w;
+    const clean=w.toLowerCase().replace(/[^a-zäöå]/gi,'');
+    return `<button class="word-btn" data-w="${clean}" onclick="toggleWord(this)">${w}</button>`;
+  }).join('');
+  return shell(t,`${ctxBox(t.ctx)}<div class="word-text">${btns}</div>
+  <div class="feedback" id="fb"></div>
+  <div class="btn-row">
+    <button class="btn btn-primary" onclick="checkKorjaa()">TARKISTA</button>
+    <button class="btn btn-secondary" onclick="nextTask()">OHITA →</button>
+  </div>`);
+}
+function toggleWord(btn){
+  const w=btn.dataset.w;
+  if(markedWords.has(w)){markedWords.delete(w);btn.classList.remove('marked');}
+  else{markedWords.add(w);btn.classList.add('marked');}
+}
+function checkKorjaa(){
+  const t=S.tasks[S.taskIdx];
+  const found=t.errors.filter(e=>markedWords.has(e));
+  const fp=[...markedWords].filter(w=>!t.errors.includes(w));
+  const pts=Math.max(0,Math.round(t.points*(found.length/t.errors.length)-fp.length*2));
+  if(!t.done){t.done=true;t.correct=found.length===t.errors.length&&fp.length===0;t.score=pts;S.score+=pts;}
+  document.querySelectorAll('.word-btn').forEach(b=>{
+    const w=b.dataset.w;
+    if(t.errors.includes(w)&&markedWords.has(w)) b.className='word-btn correct-hit';
+    else if(t.errors.includes(w)) b.className='word-btn missed';
+    else if(markedWords.has(w)) b.className='word-btn false-pos';
+  });
+  let detail='';
+  t.errors.forEach(e=>{if(t.errorInfo[e]) detail+=`<br>• <b>${e}</b>: ${t.errorInfo[e]}`;});
+  showFB(t.correct,`${pts}/${t.points} pistettä`,detail);
+}
+
+// ── T2: VALITSE ────────────────────────────────────────────────────────────────
+function buildValitse(t){
+  let html=t.template;
+  t.blanks.forEach(b=>{
+    const opts=shuffle(b.opts);
+    html=html.replace(`[${b.id}]`,
+      `<select class="blank-sel" id="bl-${b.id}" onchange="chkBlank('${b.id}')">
+        <option value="">— valitse —</option>
+        ${opts.map(o=>`<option value="${o}">${o}</option>`).join('')}
+      </select>`);
+  });
+  return shell(t,`<div class="ctx fill-text">${html}</div>
+  <div class="feedback" id="fb"></div>
+  <div class="btn-row">
+    <button class="btn btn-primary" onclick="checkValitse()">TARKISTA</button>
+    <button class="btn btn-secondary" onclick="nextTask()">OHITA →</button>
+  </div>`);
+}
+function chkBlank(id){
+  const t=S.tasks[S.taskIdx];
+  const b=t.blanks.find(x=>x.id===id);
+  const sel=document.getElementById('bl-'+id);
+  if(!sel||!sel.value) return;
+  sel.className='blank-sel '+(sel.value===b.correct?'ok':'fail');
+}
+function checkValitse(){
+  const t=S.tasks[S.taskIdx];
+  let ok=0,detail='';
+  t.blanks.forEach(b=>{
+    chkBlank(b.id);
+    const sel=document.getElementById('bl-'+b.id);
+    if(sel&&sel.value===b.correct) ok++;
+    else detail+=`<br>• Kohta <b>${b.id}</b>: ${b.exp}`;
+  });
+  const pts=Math.round(t.points*(ok/t.blanks.length));
+  if(!t.done){t.done=true;t.correct=ok===t.blanks.length;t.score=pts;S.score+=pts;}
+  showFB(t.correct,`${pts}/${t.points} pistettä`,detail);
+}
+
+// ── T3: JÄRJESTÄ ────────────────────────────────────────────────────────────────
+function buildJarjesta(t){
+  const shuffled=shuffle(t.words);
+  return shell(t,`
+  <div style="font-size:.75rem;color:var(--muted);margin-bottom:4px">Sanat:</div>
+  <div class="word-pool" id="pool">${shuffled.map(w=>`<div class="chip" draggable="true" data-w="${w}">${w}</div>`).join('')}</div>
+  <div style="font-size:.75rem;color:var(--muted);margin-bottom:4px">Vastauksesi:</div>
+  <div class="answer-slots" id="slots"><span class="slot-hint">Klikkaa tai raahaa sanat tähän...</span></div>
+  <div style="font-size:.73rem;color:var(--muted);margin-top:4px">💡 ${t.hint}</div>
+  <div class="feedback" id="fb"></div>
+  <div class="btn-row">
+    <button class="btn btn-primary" onclick="checkJarjesta()">TARKISTA</button>
+    <button class="btn btn-secondary" onclick="clearSlots()">TYHJENNÄ</button>
+    <button class="btn btn-secondary" onclick="nextTask()">OHITA →</button>
+  </div>`);
+}
+function attachDrag(){
+  document.querySelectorAll('.chip').forEach(c=>{
+    c.addEventListener('click',()=>moveChip(c));
+    c.addEventListener('dragstart',e=>{S.drag=c;c.classList.add('dragging');});
+    c.addEventListener('dragend',()=>c.classList.remove('dragging'));
+  });
+  ['pool','slots'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el) return;
+    el.addEventListener('dragover',e=>e.preventDefault());
+    el.addEventListener('drop',e=>{
+      e.preventDefault();
+      if(!S.drag) return;
+      const ph=el.querySelector('.slot-hint');if(ph) ph.remove();
+      el.appendChild(S.drag);
+      S.drag.classList.toggle('in-answer',id==='slots');
+    });
+  });
+}
+function moveChip(c){
+  const inAns=c.classList.contains('in-answer');
+  const target=document.getElementById(inAns?'pool':'slots');
+  const ph=target.querySelector('.slot-hint');if(ph) ph.remove();
+  target.appendChild(c);
+  c.classList.toggle('in-answer',!inAns);
+}
+function clearSlots(){
+  const pool=document.getElementById('pool');
+  document.querySelectorAll('#slots .chip').forEach(c=>{c.classList.remove('in-answer');pool.appendChild(c);});
+  const slots=document.getElementById('slots');
+  if(!slots.querySelector('.chip')) slots.innerHTML='<span class="slot-hint">Klikkaa tai raahaa sanat tähän...</span>';
+}
+function checkJarjesta(){
+  const t=S.tasks[S.taskIdx];
+  const chips=[...document.querySelectorAll('#slots .chip')];
+  if(!chips.length){
+    const fb=document.getElementById('fb');
+    fb.className='feedback fail show';fb.innerHTML='<div class="feedback-title">⚠️ Siirrä ensin sanat vastauskenttään!</div>';return;
+  }
+  const ans=chips.map(c=>c.dataset.w).join(' ');
+  const correctStr=t.correctStr||t.correct;
+  const ok=ans.trim()===correctStr.trim();
+  if(!t.done){t.correctStr=String(t.correct);t.done=true;t.correct=ok;t.score=ok?t.points:0;S.score+=t.score;}
+  showFB(ok,`${t.score}/${t.points} pistettä`,
+    ok?'':` <div class="correct-ans">Oikea järjestys: <b>${correctStr}</b></div>`);
+}
+
+// ── T4: SANASTO ────────────────────────────────────────────────────────────────
+function buildSanasto(t){
+  const defs=shuffle(t.pairs.map(p=>p.def));
+  return shell(t,`<div class="match-grid">
+    <div>${t.pairs.map((p,i)=>`<div class="match-item" id="tm${i}" onclick="selTerm(${i},'${p.term}')">${p.term}</div>`).join('')}</div>
+    <div>${defs.map((d,i)=>`<div class="match-item" id="dm${i}" onclick="selDef(${i},'${d.replace(/'/g,"&#39;")}')">${d}</div>`).join('')}</div>
+  </div>
+  <div class="feedback" id="fb"></div>
+  <div class="btn-row"><button class="btn btn-secondary" onclick="nextTask()">OHITA →</button></div>`);
+}
+function selTerm(i,term){
+  if(matchSel.matched.has('t'+i)) return;
+  document.querySelectorAll('[id^=tm]').forEach(e=>e.classList.remove('selected'));
+  document.getElementById('tm'+i).classList.add('selected');
+  matchSel.term={i,term};tryMatch();
+}
+function selDef(i,def){
+  if(matchSel.matched.has('d'+i)) return;
+  document.querySelectorAll('[id^=dm]').forEach(e=>e.classList.remove('selected'));
+  document.getElementById('dm'+i).classList.add('selected');
+  matchSel.def={i,def};tryMatch();
+}
+function tryMatch(){
+  if(!matchSel.term||!matchSel.def) return;
+  const t=S.tasks[S.taskIdx];
+  const pair=t.pairs.find(p=>p.term===matchSel.term.term);
+  if(pair&&pair.def===matchSel.def.def){
+    document.getElementById('tm'+matchSel.term.i).classList.add('matched');
+    document.getElementById('dm'+matchSel.def.i).classList.add('matched');
+    matchSel.matched.add('t'+matchSel.term.i);
+    matchSel.matched.add('d'+matchSel.def.i);
+    matchSel.term=null;matchSel.def=null;
+    if(matchSel.matched.size===t.pairs.length*2){
+      if(!t.done){t.done=true;t.correct=true;t.score=t.points;S.score+=t.points;}
+      showFB(true,`${t.points}/${t.points} pistettä`,'');
+    }
+  } else {
+    const te=document.getElementById('tm'+matchSel.term.i);
+    const de=document.getElementById('dm'+matchSel.def.i);
+    te.classList.add('shake');de.classList.add('shake');
+    setTimeout(()=>{te.classList.remove('shake','selected');de.classList.remove('shake','selected');},350);
+    matchSel.term=null;matchSel.def=null;
+    if(!t.done){S.score=Math.max(0,S.score-1);document.getElementById('score-disp').textContent=S.score;}
+  }
+}
+
+// ── T5: MUOTOILE ────────────────────────────────────────────────────────────────
+function buildMuotoile(t){
+  return shell(t,`<div class="ctx" style="color:var(--err);font-style:italic;margin-bottom:12px">
+    <div style="font-size:.68rem;color:var(--muted);margin-bottom:4px">EPÄMUODOLLINEN VERSIO:</div>"${t.informal}"</div>
+  <textarea class="rewrite-ta" id="rw" placeholder="Hyvä asiakas, ..."></textarea>
+  <div class="checklist" id="cl">${t.checks.map(c=>`
+    <div class="check-item" id="ci-${c.id}"><div class="check-dot"></div><span>${c.label}</span></div>`).join('')}
+  </div>
+  <div class="feedback" id="fb"></div>
+  <div class="btn-row">
+    <button class="btn btn-primary" onclick="checkMuotoile()">TARKISTA</button>
+    <button class="btn btn-secondary" onclick="showModel()">MALLIVASTAUS</button>
+    <button class="btn btn-secondary" onclick="nextTask()">OHITA →</button>
+  </div>`);
+}
+function checkMuotoile(){
+  const t=S.tasks[S.taskIdx];
+  const val=document.getElementById('rw').value;
+  let passed=0;
+  t.checks.forEach(c=>{
+    const ok=c.re.test(val);
+    const el=document.getElementById('ci-'+c.id);
+    if(el){el.className='check-item '+(ok?'ok':'fail');el.querySelector('.check-dot').textContent=ok?'✓':'✗';}
+    if(ok) passed++;
+  });
+  const pts=Math.round(t.points*(passed/t.checks.length));
+  if(!t.done){t.done=true;t.correct=passed===t.checks.length;t.score=pts;S.score+=pts;}
+  showFB(t.correct,`${pts}/${t.points} pistettä (${passed}/${t.checks.length} vaatimusta)`,'');
+}
+function showModel(){
+  const t=S.tasks[S.taskIdx];
+  const fb=document.getElementById('fb');
+  fb.className='feedback fail show';
+  fb.innerHTML=`<div class="feedback-title">📝 Mallivastaus:</div><div class="correct-ans">${t.model}</div>`;
+}
+
+// ── T6: OIKEIN/VÄÄRIN ────────────────────────────────────────────────────────────────
+function buildOV(t){
+  return shell(t,`<div class="statement">"${t.statement}"</div>
+  <div class="ov-btns">
+    <button class="ov-btn oikein" id="ov-oikein" onclick="checkOV(true)">✓ OIKEIN</button>
+    <button class="ov-btn vaarin" id="ov-vaarin" onclick="checkOV(false)">✗ VÄÄRIN</button>
+  </div>
+  <div class="feedback" id="fb"></div>
+  <div class="btn-row"><button class="btn btn-secondary" onclick="nextTask()">OHITA →</button></div>`);
+}
+function checkOV(ans){
+  const t=S.tasks[S.taskIdx];
+  const ok=ans===t.correct;
+  if(!t.done){t.done=true;t.correct=ok;t.score=ok?t.points:0;S.score+=t.score;}
+  document.querySelectorAll('.ov-btn').forEach(b=>b.disabled=true);
+  document.getElementById(ans?'ov-oikein':'ov-vaarin').classList.add('hit');
+  showFB(ok,`${t.score}/${t.points} pistettä`,`<div class="correct-ans">${t.exp}</div>`);
+}
+
+// ── FEEDBACK ────────────────────────────────────────────────────────────────
+function showFB(ok,score,detail){
+  const fb=document.getElementById('fb');
+  if(!fb) return;
+  fb.className='feedback '+(ok?'ok':'fail')+' show';
+  fb.innerHTML=`<div class="feedback-title">${ok?'✅':'❌'} ${ok?'Oikein':'Virhe'} — ${score}</div>${detail}`;
+  // Lisää seuraava-nappi
+  const row=document.querySelector('.btn-row');
+  if(row&&!row.querySelector('.btn-next')) row.prepend(Object.assign(document.createElement('button'),{className:'btn btn-next',innerHTML:S.taskIdx<S.tasks.length-1?'SEURAAVA →':'KATSO TULOKSET →',onclick:S.taskIdx<S.tasks.length-1?nextTask:goResults}));
+  renderNav();
+  refreshCode();
+}
+
+// ── RESULTS ────────────────────────────────────────────────────────────────
+function renderResults(){
+  document.getElementById('mod-nav').innerHTML='';
+  document.getElementById('resume-box').style.display='none';
+  document.getElementById('prog-bar').style.width='100%';
+  const correct=S.tasks.filter(t=>t.correct).length;
+  const done=S.tasks.filter(t=>t.done).length;
+  const pct=Math.round(S.score/S.maxScore*100);
+  const grade=pct>=90?'Erinomainen 🏆':pct>=75?'Hyvä 👍':pct>=60?'Tyydyttävä ✓':'Harjoittele lisää 📚';
+  const sc=type=>S.tasks.filter(t=>t.type===type&&t.correct).length+'/'+S.tasks.filter(t=>t.type===type).length;
+  const report=[
+    '📊 Automyyjän viestintä — Suoritusraportti',
+    '═══════════════════════════════════════════',
+    `Opiskelija : ${S.name}`,
+    `Päivämäärä : ${new Date().toLocaleString('fi-FI')}`,
+    '',
+    `Yhteispisteet : ${S.score} / ${S.maxScore} (${pct}%) — ${grade.replace(/\s*[^\w\s]/g,'').trim()}`,
+    '',
+    'Tehtävätyypeittäin:',
+    `  Korjaa virheet   : ${sc('korjaa')}`,
+    `  Valitse muoto    : ${sc('valitse')}`,
+    `  Järjestä lause   : ${sc('jarjesta')}`,
+    `  Ammattisanasto   : ${sc('sanasto')}`,
+    `  Muotoile viesti  : ${sc('muotoile')}`,
+    `  Oikein/väärin    : ${sc('oikein')}`,
+  ].join('\n');
+
+  document.getElementById('task-area').innerHTML=`
+  <div class="card">
+    <div class="results-icon">${pct>=75?'🎉':pct>=60?'📊':'📚'}</div>
+    <div class="results-title">${grade}</div>
+    <div class="results-score">${S.score}</div>
+    <div class="results-sub">/ ${S.maxScore} pistettä (${pct}%)</div>
+    <div class="results-grid">
+      <div class="rg-item"><div class="rg-num">${correct}</div><div class="rg-lbl">Oikein</div></div>
+      <div class="rg-item"><div class="rg-num">${done-correct}</div><div class="rg-lbl">Virhe</div></div>
+      <div class="rg-item"><div class="rg-num">${S.tasks.length-done}</div><div class="rg-lbl">Ohitettu</div></div>
+    </div>
+    <div class="breakdown">
+      ${[['korjaa','Korjaa virheet'],['valitse','Valitse muoto'],['jarjesta','Järjestä lause'],
+         ['sanasto','Ammattisanasto'],['muotoile','Muotoile viesti'],['oikein','Oikein/väärin']].map(([type,lbl])=>
+        `<div class="breakdown-row"><span class="bd-type">${lbl}</span><span class="bd-score">${sc(type)}</span></div>`
+      ).join('')}
+    </div>
+    <p style="text-align:center;font-size:.82rem;color:var(--muted);margin-bottom:12px">Opiskelija: <b style="color:var(--text)">${S.name}</b></p>
+    <div class="btn-row" style="justify-content:center">
+      <button class="btn btn-primary" onclick="saveResults()">💾 TALLENNA TULOKSET</button>
+      <button class="btn btn-secondary" onclick="copyReport()">📋 KOPIOI RAPORTTI</button>
+      <button class="btn btn-secondary" onclick="location.reload()">🔄 ALUSTA</button>
+    </div>
+    <div id="save-status" style="text-align:center;font-size:.8rem;margin-top:10px;color:var(--muted)"></div>
+    <textarea class="report-box" id="report-box" readonly onclick="this.select()">${report}</textarea>
+    <div style="font-size:.68rem;color:var(--muted);margin-top:4px;text-align:center">Klikkaa raporttia valitaksesi — tai käytä Kopioi raportti -nappia</div>
+  </div>`;
+}
+
+async function saveResults(){
+  document.getElementById('save-status').textContent='Tallennetaan...';
+  const sc=type=>S.tasks.filter(t=>t.type===type&&t.correct).length+'/'+S.tasks.filter(t=>t.type===type).length;
+  try{
+    const res=await fetch(PA_URL,{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        koodi:S.name,pisteet:S.score,oikein:S.tasks.filter(t=>t.correct).length,
+        bestStreak:S.maxScore,
+        korjaa_virheet:sc('korjaa'),valitse_muoto:sc('valitse'),
+        jarjesta_lause:sc('jarjesta'),ammattisanasto:sc('sanasto'),
+        muotoile_viesti:sc('muotoile'),oikein_vaarin:sc('oikein'),
+        paivitetty:new Date().toLocaleString('fi-FI'),
+      })
+    });
+    document.getElementById('save-status').textContent=res.ok?'✅ Tallennettu!':'⚠️ Tallennus epäonnistui (status '+res.status+')';
+  }catch(e){
+    document.getElementById('save-status').textContent='⚠️ Tallennus epäonnistui — ota kuvakaappaus raportista.';
+  }
+}
+
+function copyReport(){
+  const txt=document.getElementById('report-box').value;
+  navigator.clipboard.writeText(txt).then(()=>{
+    const btn=event.target;const orig=btn.textContent;
+    btn.textContent='✅ Kopioitu!';setTimeout(()=>btn.textContent=orig,2000);
+  }).catch(()=>{document.getElementById('report-box').select();document.execCommand('copy');});
+}
+
+render();
+</script>
+</body>
+</html>
